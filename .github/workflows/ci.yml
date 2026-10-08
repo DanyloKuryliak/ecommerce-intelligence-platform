@@ -1,0 +1,33 @@
+name: E-Commerce Intelligence checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v10.2.0
+      - run: uv venv .venv --python 3.12
+      - run: uv pip install --python .venv/bin/python -r api/requirements.txt
+      - run: .venv/bin/python -m py_compile api/app/main.py ml/churn_model.py ml/demand_forecast.py ml/model_monitoring.py serving/service.py pipeline/sync_clickhouse.py
+      - run: .venv/bin/python -m pytest api/tests -q
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm run test:e2e

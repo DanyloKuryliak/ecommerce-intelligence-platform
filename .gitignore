@@ -1,0 +1,31 @@
+# Local credentials and environment
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Generated data, model artifacts, and tracking stores
+data/
+artifacts/
+mlruns/
+*.joblib
+*.parquet
+
+# Frontend build and browser-test output
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/test-results/
+frontend/playwright-report/
+frontend/*.tsbuildinfo
+
+# Editor and OS files
+.DS_Store
+.idea/
+.vscode/
