@@ -7,9 +7,9 @@ on:
 
 jobs:
   python:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v10.2.0
       - run: uv venv .venv --python 3.12
       - run: uv pip install --python .venv/bin/python -r api/requirements.txt
@@ -17,13 +17,13 @@ jobs:
       - run: .venv/bin/python -m pytest api/tests -q
 
   frontend:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: "22"
       - run: npm ci
