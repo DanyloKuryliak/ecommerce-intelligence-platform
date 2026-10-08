@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>E-Commerce Intelligence</title>
+    <style>
+      :root { color-scheme: dark; font-family: Arial, sans-serif; background: #101827; color: #f8fafc; }
+      body { margin: 0; } main { max-width: 1000px; margin: auto; padding: 3rem 1.5rem; }
+      .eyebrow { color: #5eead4; font-weight: bold; letter-spacing: .08em; font-size: .8rem; }
+      h1 { font-size: clamp(2.2rem, 6vw, 4rem); margin: .4rem 0; }
+      .subtle { color: #cbd5e1; line-height: 1.5; } .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1rem; margin: 2rem 0; }
+      .card { background: #1e293b; border: 1px solid #334155; border-radius: .8rem; padding: 1rem; } .value { font-size: 1.7rem; font-weight: bold; margin: .4rem 0; }
+      table { width: 100%; border-collapse: collapse; } td, th { padding: .65rem; border-bottom: 1px solid #334155; text-align: left; }
+      input, button { background: #0f172a; color: #f8fafc; border: 1px solid #475569; border-radius: .4rem; padding: .55rem; } button { cursor: pointer; margin-left: .4rem; } #scenario-result { margin-top: 1rem; } #error { color: #fda4af; } .hidden { display: none; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">LOCAL DATA PIPELINE · SYNTHETIC DEMO</p>
+      <h1>E-Commerce Intelligence</h1>
+      <p class="subtle">These metrics come from deterministic fake orders stored in local PostgreSQL. Predictions are demonstrations on synthetic data.</p>
+      <p id="error" class="hidden"></p>
+      <p id="quality" class="subtle"></p>
+      <section id="kpis" class="grid"></section>
+      <section class="grid">
+        <article class="card"><h2>Revenue by month</h2><table id="months"></table></article>
+        <article class="card"><h2>Revenue by category</h2><table id="categories"></table></article>
+      </section>
+      <section class="grid">
+        <article class="card"><h2>Customer segments</h2><table id="segments"></table></article>
+        <article class="card"><h2>Top customers</h2><table id="top-customers"></table></article>
+      </section>
+      <section class="grid">
+        <article class="card"><h2>Product performance</h2><table id="products"></table></article>
+        <article class="card"><h2>Forecast what-if</h2><p class="subtle">Change expected sales growth relative to the baseline forecast.</p><label for="growth">Growth (%)</label><input id="growth" type="number" value="0" min="-100" max="200" step="5" /><button id="run-scenario">Calculate</button><table id="scenario-result"></table></article>
+      </section>
+      <section class="grid">
+        <article class="card"><h2>Churn model</h2><p id="churn-status" class="subtle"></p></article>
+        <article class="card"><h2>Demand forecast</h2><table id="forecast"></table></article>
+      </section>
+      <section class="grid">
+        <article class="card"><h2>Model comparison</h2><table id="model-comparison"></table></article>
+        <article class="card"><h2>Model monitoring</h2><p id="monitoring-status" class="subtle"></p><table id="monitoring-checks"></table></article>
+      </section>
+      <p id="note" class="subtle"></p>
+    </main>
+    <script>
+      const money = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+      const kpi = (label, value) => `<article class="card"><p>${label}</p><p class="value">${value}</p></article>`;
+      const rows = (values, label) => `<tr><th>${label}</th><th>Revenue</th></tr>` + values.map(x => `<tr><td>${x[label.toLowerCase()]}</td><td>${money.format(x.revenue)}</td></tr>`).join('');
+      const segmentRows = values => `<tr><th>Segment</th><th>Customers</th></tr>` + values.map(x => `<tr><td>${x.segment}</td><td>${x.customers}</td></tr>`).join('');
+      const customerRows = values => `<tr><th>Customer</th><th>Revenue</th><th>Segment</th></tr>` + values.map(x => `<tr><td>${x.customer_id}</td><td>${money.format(x.total_revenue)}</td><td>${x.segment}</td></tr>`).join('');
+      const productRows = values => `<tr><th>Category</th><th>Revenue</th><th>Units</th><th>Orders</th></tr>` + values.map(x => `<tr><td>${x.product_category}</td><td>${money.format(x.revenue)}</td><td>${x.units.toLocaleString()}</td><td>${x.orders.toLocaleString()}</td></tr>`).join('');
+      const forecastRows = values => `<tr><th>Month</th><th>Forecast revenue</th></tr>` + values.map(x => `<tr><td>${x.month}</td><td>${money.format(x.forecast_revenue)}</td></tr>`).join('');
+      const comparisonRows = values => `<tr><th>Model</th><th>CV average precision</th></tr>` + values.map(x => `<tr><td>${x.family}</td><td>${x.cv_average_precision.toFixed(3)}</td></tr>`).join('');
+      const checkRows = values => `<tr><th>Check</th><th>Status</th></tr>` + values.map(x => `<tr><td>${x.name}</td><td>${x.status}</td></tr>`).join('');
+      const loadDashboard = async () => {
+        const live = await fetch('/api/v1/dashboard');
+        if (live.ok) return live.json();
+        const snapshot = await fetch('demo-data.json');
+        if (!snapshot.ok) throw new Error('Neither the live API nor the static demo snapshot is available.');
+        return snapshot.json();
+      };
+      loadDashboard().then(data => {
+        const k = data.kpis;
+        document.querySelector('#kpis').innerHTML = [
+          kpi('Completed-order revenue', money.format(k.revenue)), kpi('Completed orders', k.completed_orders.toLocaleString()),
+          kpi('Active customers', k.active_customers.toLocaleString()), kpi('Average order value', money.format(k.average_order_value))
+        ].join('');
+        document.querySelector('#months').innerHTML = rows(data.monthly_revenue, 'month');
+        document.querySelector('#categories').innerHTML = rows(data.category_revenue, 'category');
+        document.querySelector('#segments').innerHTML = segmentRows(data.analytics.segments);
+        document.querySelector('#top-customers').innerHTML = customerRows(data.analytics.top_customers);
+        document.querySelector('#products').innerHTML = productRows(data.product_performance);
+        const churn = data.ml_status.churn_metrics;
+        document.querySelector('#churn-status').textContent = churn.status === 'not_trained'
+          ? 'Not trained yet.'
+          : `Time-aware baseline · ROC-AUC: ${churn.roc_auc ?? 'not available'} · Average precision: ${churn.average_precision ?? 'not available'}`;
+        document.querySelector('#model-comparison').innerHTML = churn.status === 'not_trained'
+          ? '<tr><td>Not trained yet.</td></tr>' : comparisonRows(churn.candidate_results);
+        const monitoring = data.ml_status.model_monitoring;
+        document.querySelector('#monitoring-status').textContent = monitoring.status === 'not_trained'
+          ? 'Not trained yet.' : `${monitoring.status.toUpperCase()} · latest snapshot ${monitoring.latest_snapshot} · high-risk rate ${(monitoring.prediction_summary.high_risk_rate * 100).toFixed(1)}%`;
+        document.querySelector('#monitoring-checks').innerHTML = monitoring.status === 'not_trained'
+          ? '<tr><td>Not available yet.</td></tr>' : checkRows(monitoring.checks);
+        const demand = data.ml_status.demand_forecast;
+        document.querySelector('#forecast').innerHTML = demand.status === 'not_trained'
+          ? '<tr><td>Not trained yet.</td></tr>' : forecastRows(demand.forecast);
+        document.querySelector('#note').textContent = data.data_note;
+        const quality = data.data_quality;
+        document.querySelector('#quality').textContent = `Input quality: ${quality.status.toUpperCase()} — ${quality.data_note}`;
+        const runScenario = () => {
+          const growth = Number(document.querySelector('#growth').value || 0);
+          fetch(`/api/v1/forecast/what-if?growth_pct=${encodeURIComponent(growth)}`).then(response => response.json()).then(result => {
+            document.querySelector('#scenario-result').innerHTML = `<tr><th>Month</th><th>Scenario revenue</th></tr>` + result.forecast.map(x => `<tr><td>${x.month}</td><td>${money.format(x.forecast_revenue)}</td></tr>`).join('');
+          });
+        };
+        document.querySelector('#run-scenario').addEventListener('click', runScenario);
+        runScenario();
+      }).catch(error => {
+        document.querySelector('#error').textContent = `Dashboard unavailable: ${error.message} Run data → db-up → load first.`;
+        document.querySelector('#error').classList.remove('hidden');
+      });
+    </script>
+  </body>
+</html>

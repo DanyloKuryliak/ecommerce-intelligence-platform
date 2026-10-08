@@ -1,0 +1,80 @@
+{
+  "kpis": {
+    "revenue": 4166033.3,
+    "completed_orders": 15381,
+    "active_customers": 598,
+    "average_order_value": 270.86
+  },
+  "monthly_revenue": [
+    {"month": "2025-01", "revenue": 393257.11},
+    {"month": "2025-02", "revenue": 341278.78},
+    {"month": "2025-03", "revenue": 344235.63},
+    {"month": "2025-04", "revenue": 389198.33},
+    {"month": "2025-05", "revenue": 359932.02},
+    {"month": "2025-06", "revenue": 330924.46},
+    {"month": "2025-07", "revenue": 361418.26},
+    {"month": "2025-08", "revenue": 356902.54},
+    {"month": "2025-09", "revenue": 344024.73},
+    {"month": "2025-10", "revenue": 347825.22},
+    {"month": "2025-11", "revenue": 302656.48},
+    {"month": "2025-12", "revenue": 294379.76}
+  ],
+  "category_revenue": [
+    {"category": "Electronics", "revenue": 2320922.78},
+    {"category": "Home", "revenue": 891033.92},
+    {"category": "Sports", "revenue": 709659.8},
+    {"category": "Accessories", "revenue": 244416.79}
+  ],
+  "product_performance": [
+    {"product_category": "Electronics", "orders": 3778, "units": 9357, "revenue": 2320922.78},
+    {"product_category": "Home", "orders": 3791, "units": 9431, "revenue": 891033.92},
+    {"product_category": "Sports", "orders": 3920, "units": 9765, "revenue": 709659.8},
+    {"product_category": "Accessories", "orders": 3892, "units": 9773, "revenue": 244416.79}
+  ],
+  "analytics": {
+    "segments": [
+      {"segment": "VIP", "customers": 366},
+      {"segment": "At risk", "customers": 166},
+      {"segment": "Regular", "customers": 52},
+      {"segment": "New", "customers": 13},
+      {"segment": "No purchase", "customers": 2},
+      {"segment": "Loyal", "customers": 1}
+    ],
+    "top_customers": [
+      {"customer_id": 172, "completed_orders": 43, "total_revenue": 17752.48, "segment": "VIP"},
+      {"customer_id": 126, "completed_orders": 47, "total_revenue": 16252.56, "segment": "VIP"},
+      {"customer_id": 531, "completed_orders": 44, "total_revenue": 16238.14, "segment": "VIP"}
+    ]
+  },
+  "ml_status": {
+    "churn_metrics": {
+      "model": "extra_trees",
+      "roc_auc": 0.9352,
+      "average_precision": 0.8028,
+      "candidate_results": [
+        {"family": "logistic_regression", "cv_average_precision": 0.5641},
+        {"family": "random_forest", "cv_average_precision": 0.5881},
+        {"family": "extra_trees", "cv_average_precision": 0.6064},
+        {"family": "hist_gradient_boosting", "cv_average_precision": 0.5593}
+      ]
+    },
+    "demand_forecast": {
+      "forecast": [
+        {"month": "2026-01-01", "forecast_revenue": 314953.82},
+        {"month": "2026-02-01", "forecast_revenue": 314953.82},
+        {"month": "2026-03-01", "forecast_revenue": 314953.82}
+      ]
+    },
+    "model_monitoring": {
+      "status": "review",
+      "latest_snapshot": "2025-10-28",
+      "prediction_summary": {"high_risk_rate": 0.3863},
+      "checks": [
+        {"name": "performance_above_baseline", "status": "passed"},
+        {"name": "feature_drift", "status": "review"}
+      ]
+    }
+  },
+  "data_quality": {"status": "passed", "data_note": "Static synthetic demo snapshot."},
+  "data_note": "Static synthetic snapshot for public demonstration; local API provides live database-backed results."
+}
