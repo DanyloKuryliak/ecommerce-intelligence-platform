@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - ecommerce_postgres:/var/lib/postgresql/data
       - ../db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
@@ -18,5 +18,66 @@ services:
       timeout: 3s
       retries: 12
 
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.8
+    environment:
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-change-me-locally}
+      CLICKHOUSE_DB: ecommerce
+    ports:
+      - "127.0.0.1:8123:8123"
+    volumes:
+      - ecommerce_clickhouse:/var/lib/clickhouse
+    healthcheck:
+      test: ["CMD", "clickhouse-client", "--query", "SELECT 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  airflow:
+    profiles: ["orchestration"]
+    image: ecommerce-local-workflow
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.airflow
+    command: standalone
+    environment:
+      AIRFLOW_HOME: /opt/airflow
+      AIRFLOW__CORE__DAGS_FOLDER: /opt/project/orchestration/dags
+      PYTHONPATH: /opt/project
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: 8123
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-change-me-locally}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ..:/opt/project
+      - ecommerce_airflow:/opt/airflow
+    depends_on:
+      postgres:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+      mlflow:
+        condition: service_started
+
+  mlflow:
+    profiles: ["orchestration"]
+    image: ecommerce-local-workflow
+    entrypoint: ["mlflow"]
+    command: ["server", "--backend-store-uri", "sqlite:////opt/project/data/mlflow.db", "--artifacts-destination", "/opt/project/data/mlartifacts", "--serve-artifacts", "--host", "0.0.0.0", "--port", "5000", "--allowed-hosts", "mlflow:5000,localhost,127.0.0.1"]
+    environment:
+      MLFLOW_TRACKING_URI: http://localhost:5000
+    ports:
+      - "127.0.0.1:5000:5000"
+    volumes:
+      - ..:/opt/project
+
 volumes:
   ecommerce_postgres:
+  ecommerce_clickhouse:
+  ecommerce_airflow:

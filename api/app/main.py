@@ -1,4 +1,4 @@
-"""Serve the first E-Commerce Intelligence dashboard from PostgreSQL."""
+"""Serve local PostgreSQL, ClickHouse and BentoML-backed commerce analytics."""
 
 from __future__ import annotations
 
@@ -8,8 +8,11 @@ from pathlib import Path
 from typing import Any
 
 import joblib
+import clickhouse_connect
+import httpx
 import psycopg
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
 from pipeline.quality_checks import run_quality_checks
@@ -20,6 +23,11 @@ DATA_DIR = Path(__file__).resolve().parents[2] / "data" / "generated"
 MODEL_DIR = Path(__file__).resolve().parents[2] / "data" / "models"
 
 app = FastAPI(title="E-Commerce Intelligence API", version="0.1.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_methods=["GET"],
+)
 
 
 def get_quality_report() -> dict[str, Any]:
@@ -67,25 +75,6 @@ def get_dashboard(database_url: str) -> dict[str, Any]:
                     GROUP BY 1 ORDER BY 2 DESC"""
                 )
                 category_revenue = [{"category": category, "revenue": float(value)} for category, value in cursor.fetchall()]
-                cursor.execute(
-                    """SELECT product_category,
-                        COUNT(*)::integer,
-                        COALESCE(SUM(quantity), 0)::integer,
-                        ROUND(SUM(quantity * unit_price * (1 - discount_pct)), 2),
-                        ROUND(AVG(discount_pct), 4)
-                    FROM orders WHERE status = 'completed'
-                    GROUP BY product_category ORDER BY 4 DESC"""
-                )
-                product_performance = [
-                    {
-                        "product_category": category,
-                        "orders": orders,
-                        "units": units,
-                        "revenue": float(revenue),
-                        "average_discount": float(discount),
-                    }
-                    for category, orders, units, revenue, discount in cursor.fetchall()
-                ]
     except psycopg.Error as error:
         raise RuntimeError("PostgreSQL is unavailable or demo data has not been loaded.") from error
 
@@ -98,7 +87,7 @@ def get_dashboard(database_url: str) -> dict[str, Any]:
         },
         "monthly_revenue": monthly_revenue,
         "category_revenue": category_revenue,
-        "product_performance": product_performance,
+        "product_performance": get_product_performance(),
         "data_quality": get_quality_report(),
         "analytics": get_analytics(database_url),
         "ml_status": get_ml_status(),
@@ -150,6 +139,49 @@ def get_analytics(database_url: str) -> dict[str, Any]:
     return {"monthly": monthly, "segments": segments, "top_customers": top_customers}
 
 
+def get_product_performance() -> list[dict[str, Any]]:
+    """Summarize actual products and their latest month-over-month sales."""
+    try:
+        client = clickhouse_connect.get_client(
+            host=os.getenv("CLICKHOUSE_HOST", "localhost"),
+            port=int(os.getenv("CLICKHOUSE_PORT", "8123")),
+            username=os.getenv("CLICKHOUSE_USER", "default"),
+            password=os.getenv("CLICKHOUSE_PASSWORD", "change-me-locally"),
+        )
+        result = client.query(
+            """SELECT product_id, product_name, product_category,
+                toString(toStartOfMonth(order_date)), count(), sum(units), sum(revenue)
+            FROM ecommerce.completed_orders
+            GROUP BY product_id, product_name, product_category, toStartOfMonth(order_date)
+            ORDER BY product_id, toStartOfMonth(order_date)"""
+        )
+    except Exception as error:
+        raise RuntimeError("ClickHouse analytics are unavailable; run make warehouse.") from error
+    products: dict[str, dict[str, Any]] = {}
+    months = sorted({row[3] for row in result.result_rows})
+    for product_id, name, category, month, orders, units, revenue in result.result_rows:
+        product = products.setdefault(product_id, {
+            "product_id": product_id,
+            "product_name": name,
+            "product_category": category,
+            "orders": 0,
+            "units": 0,
+            "revenue": 0.0,
+            "monthly_revenue": {},
+        })
+        product["orders"] += orders
+        product["units"] += units
+        product["revenue"] += float(revenue)
+        product["monthly_revenue"][month] = float(revenue)
+    for product in products.values():
+        latest = product["monthly_revenue"].get(months[-1], 0) if months else 0
+        previous = product["monthly_revenue"].get(months[-2], 0) if len(months) > 1 else 0
+        product["trend_pct"] = round((latest / previous - 1) * 100, 1) if previous else None
+        product.pop("monthly_revenue")
+        product["revenue"] = round(product["revenue"], 2)
+    return sorted(products.values(), key=lambda product: product["revenue"], reverse=True)
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok", "data": "synthetic"}
@@ -167,6 +199,14 @@ def dashboard() -> dict[str, Any]:
 def analytics() -> dict[str, Any]:
     try:
         return get_analytics(os.getenv("DATABASE_URL", DEFAULT_DATABASE_URL))
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+
+
+@app.get("/api/v1/product-performance")
+def product_performance() -> dict[str, Any]:
+    try:
+        return {"source": "clickhouse", "products": get_product_performance()}
     except RuntimeError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
 
@@ -240,8 +280,17 @@ def churn_score(customer_id: int) -> dict[str, Any]:
         raise HTTPException(status_code=404, detail="Customer not found.")
     artifact = joblib.load(model_path)
     features = [0 if value is None else float(value) for value in row]
-    probability = float(artifact["model"].predict_proba([features])[0][1])
     feature_map = dict(zip(artifact["features"], features))
+    try:
+        response = httpx.post(
+            f"{os.getenv('BENTO_URL', 'http://127.0.0.1:3001')}/predict",
+            json={"customer": feature_map},
+            timeout=10,
+        )
+        response.raise_for_status()
+    except httpx.HTTPError as error:
+        raise HTTPException(status_code=503, detail="BentoML churn service is unavailable; run make run-bento.") from error
+    prediction = response.json()
     reasons: list[str] = []
     if feature_map["recency_days"] > 60:
         reasons.append("No recent order")
@@ -253,8 +302,10 @@ def churn_score(customer_id: int) -> dict[str, Any]:
         reasons.append("Limited category activity")
     return {
         "customer_id": customer_id,
-        "churn_probability": round(probability, 4),
-        "risk_band": "high" if probability >= 0.5 else "lower",
+        "churn_probability": prediction["churn_probability"],
+        "risk_band": prediction["risk_band"],
+        "model": prediction["model"],
+        "model_run_id": prediction["model_run_id"],
         "features": feature_map,
         "reasons": reasons,
         "global_feature_importance": artifact["metrics"].get("permutation_importance", []),

@@ -22,6 +22,12 @@ CATEGORIES = {
     "Home": (20.0, 180.0),
     "Sports": (15.0, 140.0),
 }
+PRODUCTS = {
+    "Accessories": ("Canvas Tote", "Travel Pouch", "Desk Organizer"),
+    "Electronics": ("Wireless Headphones", "Smart Speaker", "Portable Charger"),
+    "Home": ("Table Lamp", "Throw Blanket", "Coffee Maker"),
+    "Sports": ("Yoga Mat", "Running Bottle", "Training Bag"),
+}
 
 
 def generate_data(output_dir: Path, seed: int = SEED) -> tuple[int, int]:
@@ -52,6 +58,12 @@ def generate_data(output_dir: Path, seed: int = SEED) -> tuple[int, int]:
         profiles[customer_id] = (base_weekly_probability, churn_week)
 
     orders = []
+    products = [
+        {"product_id": f"{category[:3].upper()}-{index:02d}", "product_name": name, "product_category": category}
+        for category, names in PRODUCTS.items()
+        for index, name in enumerate(names, start=1)
+    ]
+    product_ids = {category: [row["product_id"] for row in products if row["product_category"] == category] for category in PRODUCTS}
     order_id = 1
     for customer_id in range(1, CUSTOMER_COUNT + 1):
         base_probability, churn_week = profiles[customer_id]
@@ -62,6 +74,7 @@ def generate_data(output_dir: Path, seed: int = SEED) -> tuple[int, int]:
             transaction_count = 1 + int(base_probability > 0.5 and rng.random() < 0.25)
             for _ in range(transaction_count):
                 category = rng.choice(tuple(CATEGORIES))
+                product_id = rng.choice(product_ids[category])
                 low, high = CATEGORIES[category]
                 order_date = start + timedelta(days=week * 7 + rng.randrange(7))
                 order_time = datetime(
@@ -76,6 +89,7 @@ def generate_data(output_dir: Path, seed: int = SEED) -> tuple[int, int]:
                         "customer_id": customer_id,
                         "order_timestamp": order_time.isoformat(),
                         "product_category": category,
+                        "product_id": product_id,
                         "quantity": rng.randint(1, 4),
                         "unit_price": f"{rng.uniform(low, high):.2f}",
                         "discount_pct": f"{rng.choice((0, 0, 0.05, 0.10, 0.15)):.2f}",
@@ -86,6 +100,7 @@ def generate_data(output_dir: Path, seed: int = SEED) -> tuple[int, int]:
 
     orders.sort(key=lambda row: row["order_timestamp"])
     _write_csv(output_dir / "customers.csv", customers)
+    _write_csv(output_dir / "products.csv", products)
     _write_csv(output_dir / "orders.csv", orders)
     return len(customers), len(orders)
 

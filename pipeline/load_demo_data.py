@@ -18,22 +18,32 @@ def read_csv(path: Path) -> list[dict[str, str]]:
 
 def load_data(data_dir: Path, database_url: str) -> tuple[int, int]:
     customers = read_csv(data_dir / "customers.csv")
+    products = read_csv(data_dir / "products.csv")
     orders = read_csv(data_dir / "orders.csv")
     with psycopg.connect(database_url) as connection:
         with connection.cursor() as cursor:
-            cursor.execute("TRUNCATE customer_features, monthly_sales, orders, customers")
+            cursor.execute("""CREATE TABLE IF NOT EXISTS products (
+                product_id TEXT PRIMARY KEY, product_name TEXT NOT NULL, product_category TEXT NOT NULL)""")
+            cursor.execute("ALTER TABLE orders ADD COLUMN IF NOT EXISTS product_id TEXT REFERENCES products(product_id)")
+            cursor.execute("TRUNCATE customer_features, monthly_sales, orders, customers, products")
+            cursor.executemany(
+                """INSERT INTO products (product_id, product_name, product_category)
+                VALUES (%(product_id)s, %(product_name)s, %(product_category)s)""",
+                products,
+            )
             cursor.executemany(
                 """INSERT INTO customers (customer_id, signup_date, country, acquisition_channel)
                 VALUES (%(customer_id)s, %(signup_date)s, %(country)s, %(acquisition_channel)s)""",
                 customers,
             )
             cursor.executemany(
-                """INSERT INTO orders (order_id, customer_id, order_timestamp, product_category,
+                """INSERT INTO orders (order_id, customer_id, order_timestamp, product_category, product_id,
                 quantity, unit_price, discount_pct, status)
-                VALUES (%(order_id)s, %(customer_id)s, %(order_timestamp)s, %(product_category)s,
+                VALUES (%(order_id)s, %(customer_id)s, %(order_timestamp)s, %(product_category)s, %(product_id)s,
                 %(quantity)s, %(unit_price)s, %(discount_pct)s, %(status)s)""",
                 orders,
             )
+            cursor.execute("ALTER TABLE orders ALTER COLUMN product_id SET NOT NULL")
             cursor.execute(
                 "SELECT (SELECT COUNT(*) FROM customers), (SELECT COUNT(*) FROM orders)"
             )

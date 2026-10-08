@@ -14,6 +14,7 @@ ORDER_FIELDS = (
     "customer_id",
     "order_timestamp",
     "product_category",
+    "product_id",
     "quantity",
     "unit_price",
     "discount_pct",
@@ -34,6 +35,7 @@ def _check(name: str, passed: bool, details: str) -> dict[str, Any]:
 def run_quality_checks(data_dir: Path) -> dict[str, Any]:
     """Return a JSON-serializable report without changing the input files."""
     customers = _read_csv(data_dir / "customers.csv")
+    products = _read_csv(data_dir / "products.csv")
     orders = _read_csv(data_dir / "orders.csv")
     checks: list[dict[str, Any]] = []
 
@@ -41,6 +43,8 @@ def run_quality_checks(data_dir: Path) -> dict[str, Any]:
     order_ids = [row.get("order_id", "") for row in orders]
     checks.append(_check("customers_not_empty", bool(customers), f"{len(customers)} customer rows found"))
     checks.append(_check("orders_not_empty", bool(orders), f"{len(orders)} order rows found"))
+    product_lookup = {row["product_id"]: row["product_category"] for row in products}
+    checks.append(_check("products_catalog_valid", bool(products) and len(products) == len(product_lookup), f"{len(products)} unique products found"))
     checks.append(_check("customer_ids_unique", len(customer_ids) == len(set(customer_ids)), "Customer IDs have no duplicates"))
     checks.append(_check("order_ids_unique", len(order_ids) == len(set(order_ids)), "Order IDs have no duplicates"))
 
@@ -72,7 +76,10 @@ def run_quality_checks(data_dir: Path) -> dict[str, Any]:
     invalid_timestamps = 0
     invalid_numbers = 0
     invalid_statuses = 0
+    invalid_products = 0
     for row in orders:
+        if product_lookup.get(row.get("product_id")) != row.get("product_category"):
+            invalid_products += 1
         try:
             if int(row["customer_id"]) not in valid_customer_ids:
                 unknown_customers += 1
@@ -93,11 +100,12 @@ def run_quality_checks(data_dir: Path) -> dict[str, Any]:
     checks.append(_check("order_timestamps_are_valid", invalid_timestamps == 0, f"{invalid_timestamps} invalid order timestamps"))
     checks.append(_check("order_numbers_are_valid", invalid_numbers == 0, f"{invalid_numbers} orders have invalid numeric values"))
     checks.append(_check("order_statuses_are_known", invalid_statuses == 0, f"{invalid_statuses} orders have unknown statuses"))
+    checks.append(_check("orders_reference_catalog", invalid_products == 0, f"{invalid_products} orders have unknown or mismatched products"))
 
     passed = all(check["status"] == "passed" for check in checks)
     return {
         "status": "passed" if passed else "failed",
-        "rows": {"customers": len(customers), "orders": len(orders)},
+        "rows": {"customers": len(customers), "products": len(products), "orders": len(orders)},
         "checks": checks,
         "data_note": "Synthetic deterministic demo data; this report checks CSV inputs before database loading.",
     }

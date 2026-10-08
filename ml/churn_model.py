@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Iterator
 
 import joblib
+from lightgbm import LGBMClassifier
 import mlflow
 import psycopg
 from scipy.stats import loguniform, randint
@@ -170,6 +171,17 @@ def _search_spaces() -> list[tuple[str, Any, dict[str, Any]]]:
                 "l2_regularization": loguniform(0.01, 10.0),
             },
         ),
+        (
+            "lightgbm",
+            LGBMClassifier(class_weight="balanced", random_state=42, n_jobs=1, verbosity=-1),
+            {
+                "n_estimators": randint(80, 251),
+                "num_leaves": randint(7, 32),
+                "learning_rate": loguniform(0.02, 0.2),
+                "min_child_samples": randint(10, 51),
+                "reg_lambda": loguniform(0.01, 10.0),
+            },
+        ),
     ]
 
 
@@ -177,19 +189,27 @@ def _json_safe_params(params: dict[str, Any]) -> dict[str, Any]:
     return {key: (float(value) if hasattr(value, "item") else value) for key, value in params.items()}
 
 
-def _log_mlflow(metrics_path: Path, metrics: dict[str, Any], model_path: Path) -> str:
+def _log_mlflow(metrics_path: Path, metrics: dict[str, Any], model_path: Path, model: Any) -> str:
     tracking_path = metrics_path.parents[1] / "mlflow.db"
     artifact_path = metrics_path.parents[1] / "mlartifacts"
     artifact_path.mkdir(parents=True, exist_ok=True)
-    mlflow.set_tracking_uri(f"sqlite:///{tracking_path}")
+    tracking_uri = os.getenv("MLFLOW_TRACKING_URI", f"sqlite:///{tracking_path}")
+    mlflow.set_tracking_uri(tracking_uri)
     client = mlflow.MlflowClient()
-    experiment = client.get_experiment_by_name("ecommerce-churn")
+    experiment_name = "ecommerce-churn-served" if tracking_uri.startswith("http") else "ecommerce-churn"
+    experiment = client.get_experiment_by_name(experiment_name)
     if experiment is None:
-        experiment_id = mlflow.create_experiment("ecommerce-churn", artifact_location=artifact_path.as_uri())
+        experiment_id = mlflow.create_experiment(
+            experiment_name,
+            artifact_location=None if tracking_uri.startswith("http") else artifact_path.as_uri(),
+        )
         mlflow.set_experiment(experiment_id=experiment_id)
     else:
         mlflow.set_experiment(experiment_id=experiment.experiment_id)
     with mlflow.start_run() as run:
+        metrics["mlflow_run_id"] = run.info.run_id
+        metrics_path.write_text(json.dumps(metrics, indent=2) + "\n", encoding="utf-8")
+        joblib.dump({"model": model, "features": FEATURES, "metrics": metrics}, model_path)
         mlflow.log_params({
             "selected_model": metrics["model"],
             "selection_metric": metrics["selection_metric"],
@@ -292,10 +312,7 @@ def train_churn_model(database_url: str, output_dir: Path) -> dict[str, Any]:
     }
     metrics_path = output_dir / "churn_metrics.json"
     model_path = output_dir / "churn_model.joblib"
-    metrics_path.write_text(json.dumps(metrics, indent=2) + "\n", encoding="utf-8")
-    joblib.dump({"model": final_model, "features": FEATURES, "metrics": metrics}, model_path)
-    metrics["mlflow_run_id"] = _log_mlflow(metrics_path, metrics, model_path)
-    metrics_path.write_text(json.dumps(metrics, indent=2) + "\n", encoding="utf-8")
+    _log_mlflow(metrics_path, metrics, model_path, final_model)
     return metrics
 
 

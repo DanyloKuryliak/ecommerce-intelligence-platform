@@ -5,11 +5,18 @@ CREATE TABLE IF NOT EXISTS customers (
     acquisition_channel TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS products (
+    product_id TEXT PRIMARY KEY,
+    product_name TEXT NOT NULL,
+    product_category TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS orders (
     order_id INTEGER PRIMARY KEY,
     customer_id INTEGER NOT NULL REFERENCES customers(customer_id),
     order_timestamp TIMESTAMPTZ NOT NULL,
     product_category TEXT NOT NULL,
+    product_id TEXT NOT NULL REFERENCES products(product_id),
     quantity INTEGER NOT NULL CHECK (quantity > 0),
     unit_price NUMERIC(10, 2) NOT NULL CHECK (unit_price > 0),
     discount_pct NUMERIC(4, 3) NOT NULL CHECK (discount_pct >= 0 AND discount_pct < 1),
