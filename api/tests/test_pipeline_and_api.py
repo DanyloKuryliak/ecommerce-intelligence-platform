@@ -52,6 +52,23 @@ def test_quality_report_fails_for_unknown_customer(tmp_path: Path) -> None:
     assert reference_check["status"] == "failed"
 
 
+def test_quality_report_rejects_product_category_mismatch(tmp_path: Path) -> None:
+    generate_data(tmp_path, seed=42)
+    orders_path = tmp_path / "orders.csv"
+    with orders_path.open(newline="", encoding="utf-8") as file:
+        rows = list(csv.DictReader(file))
+    rows[0]["product_category"] = "Unknown"
+    with orders_path.open("w", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=rows[0])
+        writer.writeheader()
+        writer.writerows(rows)
+
+    report = run_quality_checks(tmp_path)
+
+    assert report["status"] == "failed"
+    assert next(check for check in report["checks"] if check["name"] == "orders_reference_catalog")["status"] == "failed"
+
+
 def test_customer_segmentation_rules_are_transparent() -> None:
     assert segment_customer(None, 0, 0) == "No purchase"
     assert segment_customer(30, 10, 100) == "New"
@@ -80,6 +97,9 @@ def test_static_demo_snapshot_has_dashboard_contract() -> None:
 
     assert snapshot["kpis"]["active_customers"] > 0
     assert snapshot["product_performance"]
+    assert len({product["product_id"] for product in snapshot["product_performance"]}) == 12
+    assert all(product["product_name"] and product["product_category"] for product in snapshot["product_performance"])
+    assert "customer_id" not in json.dumps(snapshot)
     assert snapshot["ml_status"]["churn_metrics"]["candidate_results"]
     assert snapshot["ml_status"]["demand_forecast"]["forecast"]
 

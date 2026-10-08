@@ -1,80 +1,447 @@
 {
   "kpis": {
-    "revenue": 4166033.3,
-    "completed_orders": 15381,
-    "active_customers": 598,
-    "average_order_value": 270.86
+    "revenue": 4273103.386,
+    "completed_orders": 15464,
+    "active_customers": 600,
+    "average_order_value": 276.3258785566477
   },
   "monthly_revenue": [
-    {"month": "2025-01", "revenue": 393257.11},
-    {"month": "2025-02", "revenue": 341278.78},
-    {"month": "2025-03", "revenue": 344235.63},
-    {"month": "2025-04", "revenue": 389198.33},
-    {"month": "2025-05", "revenue": 359932.02},
-    {"month": "2025-06", "revenue": 330924.46},
-    {"month": "2025-07", "revenue": 361418.26},
-    {"month": "2025-08", "revenue": 356902.54},
-    {"month": "2025-09", "revenue": 344024.73},
-    {"month": "2025-10", "revenue": 347825.22},
-    {"month": "2025-11", "revenue": 302656.48},
-    {"month": "2025-12", "revenue": 294379.76}
+    {
+      "month": "2025-01",
+      "revenue": 380225.62
+    },
+    {
+      "month": "2025-02",
+      "revenue": 340425.19
+    },
+    {
+      "month": "2025-03",
+      "revenue": 377867.62
+    },
+    {
+      "month": "2025-04",
+      "revenue": 373716.31
+    },
+    {
+      "month": "2025-05",
+      "revenue": 386773.17
+    },
+    {
+      "month": "2025-06",
+      "revenue": 372759.29
+    },
+    {
+      "month": "2025-07",
+      "revenue": 387710.21
+    },
+    {
+      "month": "2025-08",
+      "revenue": 354945.57
+    },
+    {
+      "month": "2025-09",
+      "revenue": 344577.0
+    },
+    {
+      "month": "2025-10",
+      "revenue": 323912.45
+    },
+    {
+      "month": "2025-11",
+      "revenue": 314524.72
+    },
+    {
+      "month": "2025-12",
+      "revenue": 315666.23
+    }
   ],
   "category_revenue": [
-    {"category": "Electronics", "revenue": 2320922.78},
-    {"category": "Home", "revenue": 891033.92},
-    {"category": "Sports", "revenue": 709659.8},
-    {"category": "Accessories", "revenue": 244416.79}
+    {
+      "category": "Electronics",
+      "revenue": 2422133.49
+    },
+    {
+      "category": "Home",
+      "revenue": 907586.06
+    },
+    {
+      "category": "Sports",
+      "revenue": 706922.3
+    },
+    {
+      "category": "Accessories",
+      "revenue": 236461.54
+    }
   ],
   "product_performance": [
-    {"product_category": "Electronics", "orders": 3778, "units": 9357, "revenue": 2320922.78},
-    {"product_category": "Home", "orders": 3791, "units": 9431, "revenue": 891033.92},
-    {"product_category": "Sports", "orders": 3920, "units": 9765, "revenue": 709659.8},
-    {"product_category": "Accessories", "orders": 3892, "units": 9773, "revenue": 244416.79}
+    {
+      "product_id": "ELE-01",
+      "product_name": "Wireless Headphones",
+      "product_category": "Electronics",
+      "orders": 1269,
+      "units": 3204,
+      "revenue": 810537.46,
+      "trend_pct": -1.6
+    },
+    {
+      "product_id": "ELE-02",
+      "product_name": "Smart Speaker",
+      "product_category": "Electronics",
+      "orders": 1307,
+      "units": 3271,
+      "revenue": 806605.97,
+      "trend_pct": -9.2
+    },
+    {
+      "product_id": "ELE-03",
+      "product_name": "Portable Charger",
+      "product_category": "Electronics",
+      "orders": 1279,
+      "units": 3197,
+      "revenue": 804990.05,
+      "trend_pct": 1.5
+    },
+    {
+      "product_id": "HOM-03",
+      "product_name": "Coffee Maker",
+      "product_category": "Home",
+      "orders": 1353,
+      "units": 3418,
+      "revenue": 315353.09,
+      "trend_pct": 11.7
+    },
+    {
+      "product_id": "HOM-01",
+      "product_name": "Table Lamp",
+      "product_category": "Home",
+      "orders": 1270,
+      "units": 3164,
+      "revenue": 298400.36,
+      "trend_pct": -8.7
+    },
+    {
+      "product_id": "HOM-02",
+      "product_name": "Throw Blanket",
+      "product_category": "Home",
+      "orders": 1253,
+      "units": 3115,
+      "revenue": 293832.6,
+      "trend_pct": 50.3
+    },
+    {
+      "product_id": "SPO-02",
+      "product_name": "Running Bottle",
+      "product_category": "Sports",
+      "orders": 1346,
+      "units": 3403,
+      "revenue": 248124.85,
+      "trend_pct": -4.7
+    },
+    {
+      "product_id": "SPO-01",
+      "product_name": "Yoga Mat",
+      "product_category": "Sports",
+      "orders": 1328,
+      "units": 3336,
+      "revenue": 237983.16,
+      "trend_pct": -4.9
+    },
+    {
+      "product_id": "SPO-03",
+      "product_name": "Training Bag",
+      "product_category": "Sports",
+      "orders": 1248,
+      "units": 3082,
+      "revenue": 220814.28,
+      "trend_pct": -10.9
+    },
+    {
+      "product_id": "ACC-02",
+      "product_name": "Travel Pouch",
+      "product_category": "Accessories",
+      "orders": 1297,
+      "units": 3250,
+      "revenue": 81922.14,
+      "trend_pct": 16.3
+    },
+    {
+      "product_id": "ACC-03",
+      "product_name": "Desk Organizer",
+      "product_category": "Accessories",
+      "orders": 1262,
+      "units": 3163,
+      "revenue": 78340.59,
+      "trend_pct": -6.2
+    },
+    {
+      "product_id": "ACC-01",
+      "product_name": "Canvas Tote",
+      "product_category": "Accessories",
+      "orders": 1252,
+      "units": 3110,
+      "revenue": 76198.81,
+      "trend_pct": 9.9
+    }
   ],
   "analytics": {
     "segments": [
-      {"segment": "VIP", "customers": 366},
-      {"segment": "At risk", "customers": 166},
-      {"segment": "Regular", "customers": 52},
-      {"segment": "New", "customers": 13},
-      {"segment": "No purchase", "customers": 2},
-      {"segment": "Loyal", "customers": 1}
-    ],
-    "top_customers": [
-      {"customer_id": 172, "completed_orders": 43, "total_revenue": 17752.48, "segment": "VIP"},
-      {"customer_id": 126, "completed_orders": 47, "total_revenue": 16252.56, "segment": "VIP"},
-      {"customer_id": 531, "completed_orders": 44, "total_revenue": 16238.14, "segment": "VIP"}
+      {
+        "segment": "VIP",
+        "customers": 367
+      },
+      {
+        "segment": "At risk",
+        "customers": 176
+      },
+      {
+        "segment": "Regular",
+        "customers": 41
+      },
+      {
+        "segment": "New",
+        "customers": 16
+      }
     ]
   },
   "ml_status": {
     "churn_metrics": {
       "model": "extra_trees",
-      "roc_auc": 0.9352,
-      "average_precision": 0.8028,
+      "features": [
+        "recency_days",
+        "orders_last_30d",
+        "orders_last_90d",
+        "revenue_last_90d",
+        "average_order_value_90d",
+        "category_diversity_90d",
+        "discount_rate_90d",
+        "tenure_days",
+        "completed_orders_lifetime"
+      ],
+      "selection_metric": "average_precision",
+      "cv_strategy": "walk-forward snapshot groups",
+      "cv_folds": 2,
+      "development_snapshots": [
+        "2025-05-01",
+        "2025-06-30",
+        "2025-08-29"
+      ],
+      "test_snapshot": "2025-10-28",
+      "development_rows": 1792,
+      "test_rows": 600,
       "candidate_results": [
-        {"family": "logistic_regression", "cv_average_precision": 0.5641},
-        {"family": "random_forest", "cv_average_precision": 0.5881},
-        {"family": "extra_trees", "cv_average_precision": 0.6064},
-        {"family": "hist_gradient_boosting", "cv_average_precision": 0.5593}
-      ]
+        {
+          "family": "logistic_regression",
+          "cv_average_precision": 0.5830716220662318,
+          "best_params": {
+            "model__C": 0.04207988669606638
+          }
+        },
+        {
+          "family": "random_forest",
+          "cv_average_precision": 0.565150544490065,
+          "best_params": {
+            "max_depth": 8,
+            "max_features": "sqrt",
+            "min_samples_leaf": 7,
+            "n_estimators": 306
+          }
+        },
+        {
+          "family": "extra_trees",
+          "cv_average_precision": 0.6155846727382145,
+          "best_params": {
+            "max_depth": 3,
+            "max_features": 1.0,
+            "min_samples_leaf": 6,
+            "n_estimators": 457
+          }
+        },
+        {
+          "family": "hist_gradient_boosting",
+          "cv_average_precision": 0.5226366798199664,
+          "best_params": {
+            "l2_regularization": 0.6251373574521749,
+            "learning_rate": 0.0286449874364605,
+            "max_iter": 174,
+            "max_leaf_nodes": 15
+          }
+        },
+        {
+          "family": "lightgbm",
+          "cv_average_precision": 0.5242180517599748,
+          "best_params": {
+            "learning_rate": 0.047377279007281566,
+            "min_child_samples": 38,
+            "n_estimators": 94,
+            "num_leaves": 17,
+            "reg_lambda": 2.1830968390524603
+          }
+        }
+      ],
+      "test_churn_rate": 0.3383,
+      "baseline_average_precision": 0.3383,
+      "roc_auc": 0.9456514995470958,
+      "average_precision": 0.8450518826052128,
+      "permutation_importance": [
+        {
+          "feature": "orders_last_90d",
+          "mean_decrease": 0.105657
+        },
+        {
+          "feature": "orders_last_30d",
+          "mean_decrease": 0.009535
+        },
+        {
+          "feature": "completed_orders_lifetime",
+          "mean_decrease": 0.008452
+        },
+        {
+          "feature": "recency_days",
+          "mean_decrease": 0.00321
+        },
+        {
+          "feature": "revenue_last_90d",
+          "mean_decrease": 0.000818
+        },
+        {
+          "feature": "category_diversity_90d",
+          "mean_decrease": -0.001101
+        },
+        {
+          "feature": "discount_rate_90d",
+          "mean_decrease": -0.001679
+        },
+        {
+          "feature": "average_order_value_90d",
+          "mean_decrease": -0.001844
+        },
+        {
+          "feature": "tenure_days",
+          "mean_decrease": -0.002423
+        }
+      ],
+      "label_definition": "No completed order in the 60 days after the historical snapshot.",
+      "warning": "Demonstration baseline on synthetic data; not a production decision system.",
+      "mlflow_run_id": "f184ad856a3e46d7ab92ba26cf95a527"
     },
     "demand_forecast": {
+      "model": "three_month_moving_average",
+      "history_rows": 12,
+      "holdout_months": 3,
+      "mae": 44376.46,
+      "mape": 0.1397,
       "forecast": [
-        {"month": "2026-01-01", "forecast_revenue": 314953.82},
-        {"month": "2026-02-01", "forecast_revenue": 314953.82},
-        {"month": "2026-03-01", "forecast_revenue": 314953.82}
-      ]
+        {
+          "month": "2026-01-01",
+          "forecast_revenue": 318034.47
+        },
+        {
+          "month": "2026-02-01",
+          "forecast_revenue": 318034.47
+        },
+        {
+          "month": "2026-03-01",
+          "forecast_revenue": 318034.47
+        }
+      ],
+      "warning": "Demonstration baseline on synthetic data; not a financial forecast."
     },
     "model_monitoring": {
       "status": "review",
+      "model": "extra_trees",
       "latest_snapshot": "2025-10-28",
-      "prediction_summary": {"high_risk_rate": 0.3863},
+      "development_rows": 1792,
+      "latest_rows": 600,
+      "test_metrics": {
+        "roc_auc": 0.9456514995470958,
+        "average_precision": 0.8450518826052128,
+        "baseline_average_precision": 0.3383
+      },
+      "prediction_summary": {
+        "mean_churn_probability": 0.3677,
+        "high_risk_rate": 0.3967
+      },
+      "feature_drift": [
+        {
+          "feature": "recency_days",
+          "development_mean": 18.3627,
+          "latest_mean": 35.525,
+          "relative_change": 0.9346,
+          "status": "review"
+        },
+        {
+          "feature": "orders_last_30d",
+          "development_mean": 2.3175,
+          "latest_mean": 1.8667,
+          "relative_change": -0.1945,
+          "status": "stable"
+        },
+        {
+          "feature": "orders_last_90d",
+          "development_mean": 6.8493,
+          "latest_mean": 6.085,
+          "relative_change": -0.1116,
+          "status": "stable"
+        },
+        {
+          "feature": "revenue_last_90d",
+          "development_mean": 1869.4668,
+          "latest_mean": 1697.5269,
+          "relative_change": -0.092,
+          "status": "stable"
+        },
+        {
+          "feature": "average_order_value_90d",
+          "development_mean": 266.914,
+          "latest_mean": 232.1044,
+          "relative_change": -0.1304,
+          "status": "stable"
+        },
+        {
+          "feature": "category_diversity_90d",
+          "development_mean": 2.9911,
+          "latest_mean": 2.6033,
+          "relative_change": -0.1296,
+          "status": "stable"
+        },
+        {
+          "feature": "discount_rate_90d",
+          "development_mean": 0.0585,
+          "latest_mean": 0.0517,
+          "relative_change": -0.1149,
+          "status": "stable"
+        },
+        {
+          "feature": "tenure_days",
+          "development_mean": 366.0022,
+          "latest_mean": 485.8833,
+          "relative_change": 0.3275,
+          "status": "stable"
+        },
+        {
+          "feature": "completed_orders_lifetime",
+          "development_mean": 13.6373,
+          "latest_mean": 21.8433,
+          "relative_change": 0.6017,
+          "status": "review"
+        }
+      ],
       "checks": [
-        {"name": "performance_above_baseline", "status": "passed"},
-        {"name": "feature_drift", "status": "review"}
-      ]
+        {
+          "name": "performance_above_baseline",
+          "status": "passed"
+        },
+        {
+          "name": "feature_drift",
+          "status": "review",
+          "details": [
+            "recency_days",
+            "completed_orders_lifetime"
+          ]
+        }
+      ],
+      "warning": "Monitoring is a synthetic-demo health report; thresholds are not production SLAs."
     }
   },
-  "data_quality": {"status": "passed", "data_note": "Static synthetic demo snapshot."},
-  "data_note": "Static synthetic snapshot for public demonstration; local API provides live database-backed results."
+  "data_note": "Synthetic deterministic demo data; completed orders only."
 }
