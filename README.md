@@ -1,37 +1,31 @@
-# E-Commerce Intelligence Platform
+# E-Commerce Intelligence
 
-Status: **portfolio MVP complete — local system and public-demo package ready**.
-
-This project will grow from a small, honest analytics application into an MLOps portfolio project. We start with synthetic data so no customer information, orders, or credentials are involved. The generator now simulates different customer lifecycles—stable, low-frequency, and decaying activity—so the ML task has meaningful behavior to learn.
-
-## What works in this milestone
+A locally runnable analytics and ML portfolio project for a **synthetic** online store. The public-demo build is a static Next.js site with precomputed results; all databases, orchestration, training, and model serving run on your computer.
 
 ```text
-Deterministic fake store data
-        ↓
-PostgreSQL (local Docker container)
-        ↓
-FastAPI analytics API
-        ↓
-Simple browser dashboard
+Synthetic CSV → quality gate → PostgreSQL ──→ customer segments + monthly sales
+                                  │
+                                  ├──→ ClickHouse → product performance
+                                  └──→ LightGBM and other churn candidates → MLflow
+                                                 │
+                                                 └──→ BentoML → FastAPI → Next.js + Recharts
+Airflow orchestrates the local refresh; demand forecasts and monitoring feed the same dashboard.
 ```
 
-The dashboard shows completed-order revenue, order count, active customers, average order value, monthly revenue, and category revenue. The local API also exposes clearly labelled demonstration churn and demand reports after `make ml`.
+## What you can explore
 
-## Code tour — what each folder means
+- Completed-order revenue, orders, active customers, monthly trend, and customer segments.
+- Twelve named products with revenue and month-over-month change from ClickHouse.
+- Churn-model comparison, time-aware cross-validation, held-out test metrics, monitoring checks, and a live customer score routed through BentoML.
+- A three-month revenue forecast and transparent growth what-if slider. The forecast is a baseline, **not** an optimized production model.
 
-| Folder | Plain-language role |
-| --- | --- |
-| `pipeline/` | Creates fake but realistic-looking customers and orders, then loads them into the database. |
-| `db/` | Defines the two database tables. Think of it as the database blueprint. |
-| `infra/` | Starts PostgreSQL in Docker, isolated from the rest of your computer. |
-| `api/` | Reads completed orders, calculates KPIs, and provides them to the browser. |
-| `web/` | The small dashboard page people will see. |
-| `docs/` | The plan, data contract, and later model/evaluation records. |
+All values and people are simulated. Model scores demonstrate an engineering workflow, not business advice or a guarantee on real customers.
 
-## Run it locally
+Latest verified local run (2026-10-08): 600 customers, 16,452 generated order lines, 15,464 completed orders, and $4.27M completed-order revenue matched across PostgreSQL and ClickHouse. Five churn model families were compared; Extra Trees won on cross-validation and scored 0.845 test average precision versus a 0.338 positive-rate baseline (test ROC AUC 0.946). The demand baseline had 14.0% holdout MAPE; monitoring reported `review`, which is shown rather than hidden. These numbers describe only this deterministic synthetic dataset.
 
-You do not need to type these during our collaboration—I run them. They are here so you can understand the sequence:
+## Run locally
+
+Prerequisites: Docker Desktop, `uv`, Node.js/npm. The commands are documented so the system can be reproduced; the coding agent can run them for you.
 
 ```bash
 cd apps/ecommerce-intelligence
@@ -39,30 +33,43 @@ cp .env.example .env
 make setup
 make data
 make db-up
-make load
-make analytics
 make ml
+make airflow-up
+make demo-snapshot
 make test
-make run-api
 ```
 
-Then open `http://localhost:8001`. The first run downloads the Python libraries and the database image; later runs are much faster. To stop PostgreSQL: `make db-down`.
+`make ml` loads the data, builds analytics and the ClickHouse copy, trains/evaluates churn and demand, logs an MLflow run, and writes monitoring results. `make airflow-up` starts the local orchestration and MLflow UI; trigger the `ecommerce_intelligence_refresh` DAG at `http://127.0.0.1:8080` to rehearse the complete workflow. The DAG has a weekly schedule but starts paused, so Docker cannot silently overwrite a local run. Unpause it in Airflow only when you want automatic weekly refreshes.
 
-## ML checkpoint
+For the live site, start these in separate terminals:
 
-`make ml` now trains churn with randomized hyperparameter search, walk-forward snapshot cross-validation, an untouched chronological test snapshot, permutation importance, and a local MLflow run in `data/mlflow.db` with artifacts under `data/mlartifacts/`. The API returns a score plus human-readable demonstration reasons and the global importance report.
+```bash
+make run-bento
+make run-api
+cd frontend && npm ci && npm run dev
+```
 
-To inspect the recorded experiment in a browser, run `make mlflow-ui` and open `http://localhost:5000`. The UI reads the local SQLite tracking database and shows the selected model, candidate metrics, parameters, and saved artifacts. It is a development tool; it is not part of the public demo deployment.
+Open `http://127.0.0.1:3000`. Local endpoints: FastAPI `:8001`, BentoML `:3001`, MLflow `:5000`, Airflow `:8080`, PostgreSQL `:5433`, ClickHouse HTTP `:8123`. The frontend falls back to checked-in aggregate demo data if the local API is absent; live customer scoring requires all local services. To stop containers, `make db-down` (include `--profile orchestration` in Compose if you also started Airflow/MLflow).
 
-The dashboard also shows product-category performance and supports a transparent forecast what-if scenario, for example applying +10% growth to the baseline forecast.
+## Code tour
 
-`make ml` also generates a monitoring report comparing the newest snapshot with development history. It reports prediction rates, baseline comparison, and feature shifts requiring review; these checks are visible in the dashboard alongside model-family comparisons.
+| Folder | Role |
+| --- | --- |
+| `pipeline/`, `db/` | Generate, validate and load CSV; refresh PostgreSQL and ClickHouse. |
+| `ml/` | Point-in-time training, forecasting and model monitoring. |
+| `orchestration/` | Airflow DAG connecting the local stages. |
+| `serving/`, `api/` | BentoML prediction service and FastAPI business endpoints. |
+| `frontend/` | Next.js/Recharts dashboard and browser tests. |
+| `web/demo-data.json` | Exported, aggregate-only public-demo snapshot. |
+| `infra/`, `docs/` | Docker services and architecture/release details. |
 
-## Next milestones
+Start reading at [the architecture guide](docs/ARCHITECTURE.md), then follow `pipeline/generate_demo_data.py` → `pipeline/load_demo_data.py` → `pipeline/sync_clickhouse.py` → `ml/churn_model.py` → `serving/service.py` → `api/app/main.py` → `frontend/app/dashboard.tsx`.
 
-1. Optional: publish the lightweight precomputed demo using [the deployment runbook](docs/DEPLOYMENT.md).
-2. Optional: replace local PostgreSQL/MLflow with managed services for cloud-learning purposes.
+## Verification and publication
 
-The local portfolio scope is complete: the project has a reproducible data pipeline, analytics API, interactive dashboard, supervised churn model, demand forecast baseline, what-if analysis, model monitoring, MLflow tracking, tests, CI, and deployment documentation.
+```bash
+make test
+cd frontend && npm run typecheck && npm run build && npm run test:e2e
+```
 
-For a static public demo, publish the `web/` directory. It uses the live API when available and falls back to the checked-in synthetic `web/demo-data.json` snapshot when it is hosted without a backend.
+The frontend's `out/` directory is the deployable static site. See [the release runbook](docs/DEPLOYMENT.md). No external deployment is performed automatically, and no raw synthetic customer/order rows, secrets, or model weights are committed. The original static `web/index.html` is retained as a legacy API-root view; Next.js is the primary UI.
